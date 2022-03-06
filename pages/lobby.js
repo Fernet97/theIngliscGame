@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Layout from '../components/layout'
 import { useRouter } from 'next/router'
-
+import RoleCard from '../components/roleCard.js'
 
 import { useEffect, useState } from 'react'
 import io from 'socket.io-client'
@@ -12,8 +12,9 @@ export default function Lobby() {
 
   const router = useRouter()
   const nickname = router.query.nickname;
+  const room = router.query.room;
 
-    const [input, setInput] = useState('')
+    const [RoomMsg, setRoomMsg] = useState('--')
 
     useEffect(() => socketInitializer(), [])
 
@@ -22,23 +23,25 @@ export default function Lobby() {
       socket = io()
 
       socket.on('connect', () => {
-        console.log('connected')
+        console.log('connected');
       })
 
-      socket.on('update-input', msg => {
-        setInput(msg)
+      socket.on('chat message', msg => {
+        setRoomMsg(msg)
       })
 
     }
 
-    const onChangeHandler = (e) => {
-      setInput(e.target.value)
-      socket.emit('input-change', e.target.value)
-    }
+
 
     const join = () => {
-      console.log("entro")
-      io.to("some room").emit("some event");
+      // Avvisa che vuoi fare una richiesta x entrare nella room
+      socket.emit('joinRoom', {user: nickname, numRoom: room});
+    }
+
+    const sendToRoom = () => {
+      let msg = "ciao ragazzuoli!"
+      socket.emit('chat message', {msg, room});
     }
 
 
@@ -48,23 +51,36 @@ export default function Lobby() {
         <title>La Lobby</title>
       </Head>
 
-      <h1>{nickname}</h1>
-      <img src="/images/icon-192x192.png" alt="Your Name" />
-      <h2>
-        <Link href="/">
-          <a>Back to home</a>
-        </Link>
-      </h2>
+      <h1>Seleziona ruolo</h1>
+      <h3>Messaggio nella room: {RoomMsg}</h3>
 
-      <input
-        placeholder="Type something"
-        value={input}
-        onChange={onChangeHandler}
-      />
+      <p>Giocatore "{nickname}" in Room "{room}"</p>
 
-      <button onClick={join}>
-        Sono il paroliere
-      </button>
+      <div class= "CardLayout">
+        <RoleCard onCardClick={join}
+            role = "Guesser"
+            descr = "Il guesser bla bla bla bla bla"
+            imgPath = "/images/guesser.jpg"
+            joined = "1"
+            max = "2"
+         />
+
+         <RoleCard onCardClick={join}
+             role = "Paroliere"
+             descr = "Il paroliere bla bla bla bla bla bla"
+             imgPath = "/images/paroliere.jpg"
+             joined = "1"
+             max ="1"
+          />
+      </div>
+
+
+      <Link href="/">
+        <button style={{marginTop: "5%"}} >Bec home</button>
+      </Link>
+
+        <button style={{marginTop: "5%"}} onClick = {sendToRoom}>Invio MSg</button>
+
     </Layout>
   )
 }

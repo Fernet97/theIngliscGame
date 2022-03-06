@@ -1,9 +1,9 @@
 import { Server } from 'socket.io'
 
-let numUsers = 0;
 
 
 const RoomHandler = (req, res) => {
+
   if (res.socket.server.io) {
     console.log('Socket is already running')
   } else {
@@ -11,18 +11,23 @@ const RoomHandler = (req, res) => {
     const io = new Server(res.socket.server)
     res.socket.server.io = io
 
-  //   io.on('connection', socket => {
-  //     socket.on('input-change', msg => {
-  //       socket.broadcast.emit('update-input', msg)
-  //     })
-  //   })
-  // }
 
   io.on('connection', socket => {
-    socket.on('join', function(room) {
-    socket.join(room);
-    })
-  })
+      console.log("Un nuovo utente si è connesso.");
+
+      socket.on('joinRoom',  msg => {
+        socket.join(msg.numRoom);
+        console.log("|nickname:"+msg.user+"|ID:"+socket.id+"| vuole entrare nella room "+msg.numRoom);
+      });
+
+      socket.on('chat message', function ({msg, room}) {
+          console.log(msg + " della room "+room);
+          io.to(room).emit('chat message', msg);
+      });
+
+  });
+
+
 }
   res.end()
 }
