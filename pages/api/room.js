@@ -4,6 +4,9 @@ import { Server } from 'socket.io'
 
 const RoomHandler = (req, res) => {
 
+  var userInRooms = [];
+  var AllMsg = [];
+
   if (res.socket.server.io) {
     console.log('Socket is already running')
   } else {
@@ -17,12 +20,27 @@ const RoomHandler = (req, res) => {
 
       socket.on('joinRoom',  msg => {
         socket.join(msg.numRoom);
-        console.log("|nickname:"+msg.user+"|ID:"+socket.id+"| vuole entrare nella room "+msg.numRoom);
+        //console.log("|nickname:"+msg.user+"|ID:"+socket.id+"| vuole entrare nella room "+msg.numRoom);
+        if (!userInRooms.hasOwnProperty(socket.id)) {
+          userInRooms[socket.id] = msg.numRoom
+          console.log(userInRooms+"\n");
+
+          socket.emit("HistoryOfRoom", "bbh");
+        }
+
       });
 
-      socket.on('chat message', function ({msg, room}) {
-          console.log(msg + " della room "+room);
-          io.to(room).emit('chat message', msg);
+      // obj: {user, room, msg }
+      // Qualcuno che scrive su una room
+      socket.on('new message', function (obj) {
+
+          AllMsg.push({
+            room: obj.numRoom,
+            user: obj.user,
+            msg:  obj.msg
+          });
+          console.log(AllMsg);
+          io.to(obj.numRoom).emit('new message', obj);
       });
 
   });

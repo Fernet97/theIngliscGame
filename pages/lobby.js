@@ -10,11 +10,13 @@ let socket;
 
 export default function Lobby() {
 
-  const router = useRouter()
-  const nickname = router.query.nickname;
-  const room = router.query.room;
+    const router = useRouter()
+    const nickname = router.query.nickname;
+    const room = router.query.room;
 
-    const [RoomMsg, setRoomMsg] = useState('--')
+    const [msgToRoom, setMsgToRoom] = useState('')
+
+    const [listMsg, setlistMsg] = useState('')
 
     useEffect(() => socketInitializer(), [])
 
@@ -24,24 +26,34 @@ export default function Lobby() {
 
       socket.on('connect', () => {
         console.log('connected');
+        // Avvisa che vuoi fare una richiesta x entrare nella room
+        socket.emit('joinRoom', {user: nickname, numRoom: room});
       })
 
-      socket.on('chat message', msg => {
-        setRoomMsg(msg)
+      // Ascolta msg della room prima che io entrassi
+      socket.on('HistoryOfRoom', ({user, numRoom, msg}) => {
       })
+
+      // Ascolto un nuovo msg dalla Room
+      socket.on('new message', ({user, numRoom, msg}) => {
+        console.log("è arrivato un nuovo messaggio!"+ msg);
+        let newMsg = "["+numRoom+"] "+user+": "+msg+"\n"
+        setlistMsg(newMsg);
+      })
+
+
 
     }
 
 
+    const setMyRole = () => {
 
-    const join = () => {
-      // Avvisa che vuoi fare una richiesta x entrare nella room
-      socket.emit('joinRoom', {user: nickname, numRoom: room});
     }
 
     const sendToRoom = () => {
-      let msg = "ciao ragazzuoli!"
-      socket.emit('chat message', {msg, room});
+      // Scrivo sulla  Room
+      socket.emit('new message', {user: nickname, numRoom: room, msg: msgToRoom });
+
     }
 
 
@@ -51,35 +63,57 @@ export default function Lobby() {
         <title>La Lobby</title>
       </Head>
 
+
+      <p>Connessione come "{nickname}" nella Room "{room}"</p>
+
       <h1>Seleziona ruolo</h1>
-      <h3>Messaggio nella room: {RoomMsg}</h3>
-
-      <p>Giocatore "{nickname}" in Room "{room}"</p>
-
       <div class= "CardLayout">
-        <RoleCard onCardClick={join}
+        <RoleCard onCardClick={setMyRole}
             role = "Guesser"
             descr = "Il guesser bla bla bla bla bla"
             imgPath = "/images/guesser.jpg"
-            joined = "1"
+            joined = "0"
             max = "2"
          />
 
-         <RoleCard onCardClick={join}
+         <RoleCard onCardClick={setMyRole}
              role = "Paroliere"
              descr = "Il paroliere bla bla bla bla bla bla"
              imgPath = "/images/paroliere.jpg"
-             joined = "1"
+             joined = "0"
              max ="1"
           />
       </div>
 
 
+    <div  style={{
+        backgroundColor: "#add8e6",
+        borderRadius: 12,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "stretch",
+        padding: "1%"
+      }}>
+        <div>
+          <input
+            placeholder="Nuovo messaggio"
+            style={{width: "50vw"}}
+            onInput={e => setMsgToRoom(e.target.value)}
+          />
+          <button onClick = {sendToRoom}>Invia</button>
+        </div>
+          <textarea readonly rows="10" value={listMsg} placeholder="Chat della Room ..."
+          style={{
+            height: "80%",
+            fontFamily: 'lucida console',
+            fontSize: "large"
+          }}/>
+
+    </div>
+
       <Link href="/">
         <button style={{marginTop: "5%"}} >Bec home</button>
       </Link>
-
-        <button style={{marginTop: "5%"}} onClick = {sendToRoom}>Invio MSg</button>
 
     </Layout>
   )
